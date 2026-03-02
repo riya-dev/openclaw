@@ -54,6 +54,7 @@ export function registerCronEditCommand(cron: Command) {
       .option("--timeout-seconds <n>", "Timeout seconds for agent jobs")
       .option("--light-context", "Enable lightweight bootstrap context for agent jobs")
       .option("--no-light-context", "Disable lightweight bootstrap context for agent jobs")
+      .option("--context-file <path>", "Workspace file to prepend as context")
       .option("--announce", "Announce summary to a chat (subagent-style)")
       .option("--deliver", "Deprecated (use --announce). Announces a summary to a chat.")
       .option("--no-deliver", "Disable announce delivery")
@@ -213,6 +214,10 @@ export function registerCronEditCommand(cron: Command) {
             ? Number.parseInt(String(opts.timeoutSeconds), 10)
             : undefined;
           const hasTimeoutSeconds = Boolean(timeoutSeconds && Number.isFinite(timeoutSeconds));
+          const contextFile =
+            typeof opts.contextFile === "string" && opts.contextFile.trim()
+              ? opts.contextFile.trim()
+              : undefined;
           const hasDeliveryModeFlag = opts.announce || typeof opts.deliver === "boolean";
           const hasDeliveryTarget = typeof opts.channel === "string" || typeof opts.to === "string";
           const hasDeliveryAccount = typeof opts.account === "string";
@@ -223,6 +228,7 @@ export function registerCronEditCommand(cron: Command) {
             Boolean(thinking) ||
             hasTimeoutSeconds ||
             typeof opts.lightContext === "boolean" ||
+            Boolean(contextFile) ||
             hasDeliveryModeFlag ||
             hasDeliveryTarget ||
             hasDeliveryAccount ||
@@ -247,6 +253,7 @@ export function registerCronEditCommand(cron: Command) {
               opts.lightContext,
               typeof opts.lightContext === "boolean",
             );
+            assignIf(payload, "contextFile", contextFile, Boolean(contextFile));
             patch.payload = payload;
           }
 

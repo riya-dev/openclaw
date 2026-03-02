@@ -92,6 +92,8 @@ type CronAgentTurnPayloadFields = {
   allowUnsafeExternalContent?: boolean;
   /** If true, run with lightweight bootstrap context. */
   lightContext?: boolean;
+  /** Workspace-relative file path whose content is prepended to the message at run time. */
+  contextFile?: string;
   deliver?: boolean;
   channel?: CronMessageChannel;
   to?: string;

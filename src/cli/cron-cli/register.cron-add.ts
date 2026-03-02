@@ -85,6 +85,7 @@ export function registerCronAddCommand(cron: Command) {
       .option("--model <model>", "Model override for agent jobs (provider/model or alias)")
       .option("--timeout-seconds <n>", "Timeout seconds for agent jobs")
       .option("--light-context", "Use lightweight bootstrap context for agent jobs", false)
+      .option("--context-file <path>", "Workspace file to prepend as context")
       .option("--announce", "Announce summary to a chat (subagent-style)", false)
       .option("--deliver", "Deprecated (use --announce). Announces a summary to a chat.")
       .option("--no-deliver", "Disable announce delivery and skip main-session summary")
@@ -167,6 +168,10 @@ export function registerCronAddCommand(cron: Command) {
               return { kind: "systemEvent" as const, text: systemEvent };
             }
             const timeoutSeconds = parsePositiveIntOrUndefined(opts.timeoutSeconds);
+            const contextFile =
+              typeof opts.contextFile === "string" && opts.contextFile.trim()
+                ? opts.contextFile.trim()
+                : undefined;
             return {
               kind: "agentTurn" as const,
               message,
@@ -179,6 +184,7 @@ export function registerCronAddCommand(cron: Command) {
               timeoutSeconds:
                 timeoutSeconds && Number.isFinite(timeoutSeconds) ? timeoutSeconds : undefined,
               lightContext: opts.lightContext === true ? true : undefined,
+              contextFile,
             };
           })();
 

@@ -162,6 +162,18 @@ function coercePayload(payload: UnknownRecord) {
   ) {
     delete next.allowUnsafeExternalContent;
   }
+  if ("contextFile" in next) {
+    if (typeof next.contextFile === "string") {
+      const trimmed = next.contextFile.trim();
+      if (trimmed) {
+        next.contextFile = trimmed;
+      } else {
+        delete next.contextFile;
+      }
+    } else {
+      delete next.contextFile;
+    }
+  }
   return next;
 }
 
@@ -262,6 +274,12 @@ function copyTopLevelAgentTurnFields(next: UnknownRecord, payload: UnknownRecord
   ) {
     payload.allowUnsafeExternalContent = next.allowUnsafeExternalContent;
   }
+  if (typeof payload.contextFile !== "string" || !payload.contextFile.trim()) {
+    const cf = next.contextFile;
+    if (typeof cf === "string" && cf.trim()) {
+      payload.contextFile = cf.trim();
+    }
+  }
 }
 
 function copyTopLevelLegacyDeliveryFields(next: UnknownRecord, payload: UnknownRecord) {
@@ -298,6 +316,7 @@ function stripLegacyTopLevelFields(next: UnknownRecord) {
   delete next.thinking;
   delete next.timeoutSeconds;
   delete next.allowUnsafeExternalContent;
+  delete next.contextFile;
   delete next.message;
   delete next.text;
   delete next.deliver;
