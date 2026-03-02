@@ -66,6 +66,8 @@ export type CronPayload =
       thinking?: string;
       timeoutSeconds?: number;
       allowUnsafeExternalContent?: boolean;
+      /** Workspace-relative file path whose content is prepended to the message at run time. */
+      contextFile?: string;
       deliver?: boolean;
       channel?: CronMessageChannel;
       to?: string;
@@ -81,6 +83,7 @@ export type CronPayloadPatch =
       thinking?: string;
       timeoutSeconds?: number;
       allowUnsafeExternalContent?: boolean;
+      contextFile?: string;
       deliver?: boolean;
       channel?: CronMessageChannel;
       to?: string;

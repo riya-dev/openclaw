@@ -51,6 +51,7 @@ export function registerCronEditCommand(cron: Command) {
       .option("--thinking <level>", "Thinking level for agent jobs")
       .option("--model <model>", "Model override for agent jobs")
       .option("--timeout-seconds <n>", "Timeout seconds for agent jobs")
+      .option("--context-file <path>", "Workspace file to prepend as context")
       .option("--announce", "Announce summary to a chat (subagent-style)")
       .option("--deliver", "Deprecated (use --announce). Announces a summary to a chat.")
       .option("--no-deliver", "Disable announce delivery")
@@ -208,6 +209,10 @@ export function registerCronEditCommand(cron: Command) {
             ? Number.parseInt(String(opts.timeoutSeconds), 10)
             : undefined;
           const hasTimeoutSeconds = Boolean(timeoutSeconds && Number.isFinite(timeoutSeconds));
+          const contextFile =
+            typeof opts.contextFile === "string" && opts.contextFile.trim()
+              ? opts.contextFile.trim()
+              : undefined;
           const hasDeliveryModeFlag = opts.announce || typeof opts.deliver === "boolean";
           const hasDeliveryTarget = typeof opts.channel === "string" || typeof opts.to === "string";
           const hasDeliveryAccount = typeof opts.account === "string";
@@ -217,6 +222,7 @@ export function registerCronEditCommand(cron: Command) {
             Boolean(model) ||
             Boolean(thinking) ||
             hasTimeoutSeconds ||
+            Boolean(contextFile) ||
             hasDeliveryModeFlag ||
             hasDeliveryTarget ||
             hasDeliveryAccount ||
@@ -235,6 +241,7 @@ export function registerCronEditCommand(cron: Command) {
             assignIf(payload, "model", model, Boolean(model));
             assignIf(payload, "thinking", thinking, Boolean(thinking));
             assignIf(payload, "timeoutSeconds", timeoutSeconds, hasTimeoutSeconds);
+            assignIf(payload, "contextFile", contextFile, Boolean(contextFile));
             patch.payload = payload;
           }
 

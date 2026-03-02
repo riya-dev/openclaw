@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import {
   resolveAgentConfig,
   resolveAgentDir,
@@ -38,6 +40,7 @@ import {
   updateSessionStore,
 } from "../../config/sessions.js";
 import type { AgentDefaultsConfig } from "../../config/types.js";
+import { openBoundaryFileSync } from "../../infra/boundary-file-read.js";
 import { registerAgentRunContext } from "../../infra/agent-events.js";
 import { logWarn } from "../../logger.js";
 import { normalizeAgentId } from "../../routing/session-key.js";
@@ -152,6 +155,38 @@ export async function runCronIsolatedAgentTurn(params: {
     ensureBootstrapFiles: !agentCfg?.skipBootstrap && !isFastTestEnv,
   });
   const workspaceDir = workspace.dir;
+
+  // Read optional contextFile and prepend to message.
+  const MAX_CONTEXT_FILE_BYTES = 2 * 1024 * 1024; // 2 MB
+  let contextFileContent: string | undefined;
+  if (params.job.payload.kind === "agentTurn" && params.job.payload.contextFile) {
+    const contextFilePath = params.job.payload.contextFile;
+    if (path.isAbsolute(contextFilePath)) {
+      logWarn(`[cron:${params.job.id}] contextFile must be a relative path, ignoring: ${contextFilePath}`);
+    } else {
+      const absoluteContextPath = path.resolve(workspaceDir, contextFilePath);
+      const opened = openBoundaryFileSync({
+        absolutePath: absoluteContextPath,
+        rootPath: workspaceDir,
+        boundaryLabel: "workspace root",
+        maxBytes: MAX_CONTEXT_FILE_BYTES,
+      });
+      if (opened.ok) {
+        try {
+          const content = fs.readFileSync(opened.fd, "utf-8");
+          fs.closeSync(opened.fd);
+          if (content.trim()) {
+            contextFileContent = content;
+          }
+        } catch (err) {
+          try { fs.closeSync(opened.fd); } catch {}
+          logWarn(`[cron:${params.job.id}] Failed to read contextFile '${contextFilePath}': ${err}`);
+        }
+      } else {
+        logWarn(`[cron:${params.job.id}] Could not open contextFile '${contextFilePath}': ${opened.reason}`);
+      }
+    }
+  }
 
   const resolvedDefault = resolveConfiguredModelRef({
     cfg: cfgWithAgentDefaults,
@@ -322,7 +357,10 @@ export async function runCronIsolatedAgentTurn(params: {
   });
 
   const { formattedTime, timeLine } = resolveCronStyleNow(params.cfg, now);
-  const base = `[cron:${params.job.id} ${params.job.name}] ${params.message}`.trim();
+  const effectiveMessage = contextFileContent
+    ? `${contextFileContent.trim()}\n\n${params.message}`
+    : params.message;
+  const base = `[cron:${params.job.id} ${params.job.name}] ${effectiveMessage}`.trim();
 
   // SECURITY: Wrap external hook content with security boundaries to prevent prompt injection
   // unless explicitly allowed via a dangerous config override.

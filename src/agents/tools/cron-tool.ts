@@ -317,6 +317,7 @@ Use jobId as the canonical identifier; id is accepted for compatibility. Use con
               "thinking",
               "timeoutSeconds",
               "allowUnsafeExternalContent",
+              "contextFile",
             ]);
             const synthetic: Record<string, unknown> = {};
             let found = false;
