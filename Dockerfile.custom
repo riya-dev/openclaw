@@ -1,0 +1,26 @@
+FROM openclaw:local AS base
+
+USER root
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    git ca-certificates make curl gcc libc6-dev && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://go.dev/dl/go1.24.1.linux-arm64.tar.gz | tar -C /usr/local -xz
+ENV PATH="/usr/local/go/bin:${PATH}"
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
+    apt-get install -y --no-install-recommends ddgr && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN npm install -g @steipete/summarize@0.11.1
+
+RUN rm -rf /tmp/gogcli && \
+    git clone https://github.com/steipete/gogcli.git /tmp/gogcli && \
+    cd /tmp/gogcli && \
+    CGO_ENABLED=0 GOARCH=arm64 go build -o bin/gog ./cmd/gog && \
+    cp bin/gog /usr/local/bin/gog && \
+    chmod 755 /usr/local/bin/gog
+
+USER node
